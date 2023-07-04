@@ -38,7 +38,7 @@ class scoreScraper:
             score_list = []
             count = 0
             
-            while count < 10:
+            while count < 5:
                 
                 count += 1
 
@@ -50,7 +50,7 @@ class scoreScraper:
                 h = self.score_bounds[i][3]
 
                 cropped_frame = frame[y:y+h, x:x+w]
-                refined_frame = self.imgproc(cropped_frame)
+                refined_frame = self.imgproc(cropped_frame, True)
 
                 curr_read = pytesseract.image_to_string(refined_frame, config='--psm 11 --oem 3 outputbase digits')
                 ret, processed_score = self.processString(curr_read, 0 ,300)
@@ -83,12 +83,12 @@ class scoreScraper:
             mmr_list = []
             count = 0
             
-            while count < 20:
+            while count < 6:
 
                 ret, frame = self.capture_device.read()
 
                 cropped_frame = frame[y:y+h, x:x+w]
-                refined_frame = self.imgproc(cropped_frame)
+                refined_frame = self.imgproc(cropped_frame, False)
 
                 curr_read = pytesseract.image_to_string(refined_frame, config='--psm 11 --oem 3 outputbase digits')
                 ret, processed_score = self.processString(curr_read, 0, 2000)
@@ -103,8 +103,8 @@ class scoreScraper:
                     self.score_data[i][self.games_stored].append(self.starting_MMRs[i])
                     self.score_data[i][self.games_stored].append(self.pickFrequentNumber(mmr_list) - self.starting_MMRs[i]) 
                 else:
-                    self.score_data[i][self.games_stored].append(self.score_data[i][self.games_stored-1][1])
-                    self.score_data[i][self.games_stored].append(self.pickFrequentNumber(mmr_list) - self.score_data[i][self.games_stored][1]) 
+                    self.score_data[i][self.games_stored].append(self.score_data[i][self.games_stored-1][1] + self.score_data[i][self.games_stored-1][2])
+                    self.score_data[i][self.games_stored].append(self.pickFrequentNumber(mmr_list) - (self.score_data[i][self.games_stored][1]))
             else:
                 return False
         
@@ -172,7 +172,7 @@ class scoreScraper:
     def pickFrequentNumber(self, list):
         return max(set(list), key=list.count)
     
-    def imgproc(self, frame):
+    def imgproc(self, frame, inverted):
         
         refined_frame = frame.copy()
 
@@ -183,6 +183,8 @@ class scoreScraper:
         # Grayscale image
         refined_frame = cv.cvtColor(refined_frame, cv.COLOR_BGR2GRAY)
         # threshold image
-        refined_frame = cv.threshold(refined_frame, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)[1]
+
+        if inverted: refined_frame = cv.threshold(refined_frame, 148, 255, cv.THRESH_BINARY_INV)[1]
+        else: refined_frame = cv.threshold(refined_frame, 148, 255, cv.THRESH_BINARY)[1]
 
         return refined_frame
