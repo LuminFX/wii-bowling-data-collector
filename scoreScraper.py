@@ -30,48 +30,44 @@ class scoreScraper:
 
         ret, frame = self.capture_device.read()
 
-        lower = np.array([120, 40, 0]) # currently only bounds for blue 
-        upper = np.array([250, 170, 120])
+        ret = self.setScoreBounds()
 
-        mask = cv.inRange(frame, lower, upper)
-        output = cv.bitwise_and(frame, frame, mask=mask)
+        if not ret: return False
 
-        ret, thresh = cv.threshold(mask, 40, 255, 0)
-        contours, hierarchy = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_NONE)
+        for i in range(self.num_players):
 
-        if len(contours) != 0:
+            score_list = []
+            
+            while len(score_list) < 5:
 
-            c = max(contours, key = cv.contourArea)
-            x,y,w,h = cv.boundingRect(c) # create x, y, width, and height bounds
+                ret, frame = self.capture_device.read()
 
-            if (abs(w-h) <= 70) and w > 150:
+                x = self.score_bounds[i][0]
+                y = self.score_bounds[i][1]
+                w = self.score_bounds[i][2]
+                h = self.score_bounds[i][3]
 
-                print(abs(w-h))
-                print(w)
-                score_list = []
+                cropped_frame = frame[y:y+h, x:x+w]
+                refined_frame = cropped_frame.copy()
 
-                while len(score_list) < 5:
+                # STEP 1: NORMALIZE
+                norm_frame = np.zeros((refined_frame.shape[0], refined_frame.shape[1]))
+                refined_frame = cv.normalize(refined_frame, norm_frame, 0, 255, cv.NORM_MINMAX)
+                # DENOISE
+                refined_frame = cv.fastNlMeansDenoisingColored(refined_frame, None, 10, 10, 7, 15)
+                # Grayscale image
+                refined_frame = cv.cvtColor(refined_frame, cv.COLOR_BGR2GRAY)
+                # threshold image
+                refined_frame = cv.threshold(refined_frame, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)[1]
 
-                    ret, frame = self.capture_device.read()
+                curr_read = pytesseract.image_to_string(refined_frame, config='--psm 11 --oem 3 outputbase digits')
+                ret, processed_score = self.processString(curr_read)
 
-                    cropped_frame = frame[y:y+h, x:x+w]
-                    refined_frame = cropped_frame.copy()
+                if ret:
+                    score_list.append(processed_score)
 
-                    # STEP 1: NORMALIZE
-                    norm_frame = np.zeros((refined_frame.shape[0], refined_frame.shape[1]))
-                    refined_frame = cv.normalize(refined_frame, norm_frame, 0, 255, cv.NORM_MINMAX)
-                    # DENOISE
-                    refined_frame = cv.fastNlMeansDenoisingColored(refined_frame, None, 10, 10, 7, 15)
-                    # Grayscale image
-                    refined_frame = cv.cvtColor(refined_frame, cv.COLOR_BGR2GRAY)
-                    # threshold image
-                    refined_frame = cv.threshold(refined_frame, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)[1]
 
-                    curr_read = pytesseract.image_to_string(refined_frame, config='--psm 11 --oem 3 outputbase digits')
-                    ret, processed_score = self.processString(curr_read)
-
-                    if ret:
-                        score_list.append(processed_score)
+        
                 
         
         return False
@@ -104,7 +100,8 @@ class scoreScraper:
         return False, -1
     
     def setScoreBounds(self, frame):
-        for i in range(4):
+        retVal = False
+        for i in range(self.num_players):
             match i:
                 case 0:
                     lower = np.array([120, 40, 0]) # bounds for blue 
@@ -132,3 +129,5 @@ class scoreScraper:
             if (abs(w-h) <= 70 and abs(w-h) >= 20) and w > 150:
                 self.score_bounds.append([x,y,w,h])
                 self.found_score_bounds = True
+                retVal = True
+        return retVal
