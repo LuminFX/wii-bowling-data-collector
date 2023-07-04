@@ -29,7 +29,7 @@ class scoreScraper:
     def scanForScore(self): # will take a frame from capture device and try to scrub for score
 
         ret, frame = self.capture_device.read()
-        ret = self.setScoreBounds(frame)
+        ret = self.setScoreBounds(frame, 0, 300)
 
         if not ret: return False
 
@@ -50,17 +50,7 @@ class scoreScraper:
                 h = self.score_bounds[i][3]
 
                 cropped_frame = frame[y:y+h, x:x+w]
-                refined_frame = cropped_frame.copy()
-
-                # STEP 1: NORMALIZE
-                norm_frame = np.zeros((refined_frame.shape[0], refined_frame.shape[1]))
-                refined_frame = cv.normalize(refined_frame, norm_frame, 0, 255, cv.NORM_MINMAX)
-                # DENOISE
-                refined_frame = cv.fastNlMeansDenoisingColored(refined_frame, None, 10, 10, 7, 15)
-                # Grayscale image
-                refined_frame = cv.cvtColor(refined_frame, cv.COLOR_BGR2GRAY)
-                # threshold image
-                refined_frame = cv.threshold(refined_frame, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)[1]
+                refined_frame = self.threshold(cropped_frame)
 
                 curr_read = pytesseract.image_to_string(refined_frame, config='--psm 11 --oem 3 outputbase digits')
                 ret, processed_score = self.processString(curr_read)
@@ -95,11 +85,11 @@ class scoreScraper:
         cv.waitKey(0)
         cv.destroyAllWindows()
     
-    def processString(self, input): # take input and return if the clean data is represented as a bowling score
+    def processString(self, input, low, high): # take input and return if the clean data is represented as a bowling score
         numbers_only = ''.join(c for c in input if c.isdigit())
         if numbers_only:
             numbers_int = int(numbers_only)
-            if (numbers_int >= 0) and (numbers_int <= 300):
+            if (numbers_int >= low) and (numbers_int <= high):
                 return True, numbers_int
         return False, -1
     
@@ -142,3 +132,18 @@ class scoreScraper:
     
     def pickFrequentNumber(self, list):
         return max(set(list), key=list.count)
+    
+    def threshold(self, frame):
+        
+        refined_frame = frame.copy()
+
+        norm_frame = np.zeros((refined_frame.shape[0], refined_frame.shape[1]))
+        refined_frame = cv.normalize(refined_frame, norm_frame, 0, 255, cv.NORM_MINMAX)
+        # DENOISE
+        refined_frame = cv.fastNlMeansDenoisingColored(refined_frame, None, 10, 10, 7, 15)
+        # Grayscale image
+        refined_frame = cv.cvtColor(refined_frame, cv.COLOR_BGR2GRAY)
+        # threshold image
+        refined_frame = cv.threshold(refined_frame, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)[1]
+
+        return frame

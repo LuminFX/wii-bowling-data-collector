@@ -54,4 +54,7 @@ while True:
 
         time.sleep(0.5)
         ret = ss.scanForScore()
-        print(ss.score_data)
+
+        if ret:
+            ret2 = ss.scanForMMRChange()
+            
