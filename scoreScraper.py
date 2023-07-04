@@ -11,7 +11,7 @@ class scoreScraper:
     found_score_bounds = False
 
     capture_device = None
-    score_data = [] # will hold data in the form of [Starting MMR, Game Score, MMR Change]
+    score_data = [[],[],[],[]] # will hold data in the form of [Starting MMR, Game Score, MMR Change]
     debug_mode = False
 
     def __init__(self):
@@ -29,16 +29,18 @@ class scoreScraper:
     def scanForScore(self): # will take a frame from capture device and try to scrub for score
 
         ret, frame = self.capture_device.read()
-
-        ret = self.setScoreBounds()
+        ret = self.setScoreBounds(frame)
 
         if not ret: return False
 
         for i in range(self.num_players):
 
             score_list = []
+            count = 0
             
-            while len(score_list) < 5:
+            while count < 10:
+                
+                count += 1
 
                 ret, frame = self.capture_device.read()
 
@@ -66,11 +68,13 @@ class scoreScraper:
                 if ret:
                     score_list.append(processed_score)
 
-
+            if not len(score_list) == 0:
+                self.score_data[i].append([self.pickFrequentNumber(score_list)])
+            else:
+                return False
         
-                
-        
-        return False
+        self.games_stored += 1
+        return True
     
     def scanForMMRChange(self): # will take a frame from capture device and try to find the mmr change
         return
@@ -126,8 +130,15 @@ class scoreScraper:
                 c = max(contours, key = cv.contourArea)
                 x,y,w,h = cv.boundingRect(c) # create x, y, width, and height bounds
 
-            if (abs(w-h) <= 70 and abs(w-h) >= 20) and w > 150:
-                self.score_bounds.append([x,y,w,h])
-                self.found_score_bounds = True
-                retVal = True
+                print(abs(w-h))
+                print(w)
+
+                if (abs(w-h) <= 70 and abs(w-h) >= 20) and w > 310:
+                    self.score_bounds.append([x,y,w,h])
+                    self.found_score_bounds = True
+                    retVal = True
+
         return retVal
+    
+    def pickFrequentNumber(self, list):
+        return max(set(list), key=list.count)

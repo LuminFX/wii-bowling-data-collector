@@ -50,13 +50,8 @@ print("You may start to play! Keep this window open. Information will be printed
 
 while True:
 
-    try:
-        while True:
+    while True:
 
-            #time.sleep(0.5)
-            ret = ss.scanForScore()
-
-
-
-    except KeyboardInterrupt:
-        pass
+        time.sleep(0.5)
+        ret = ss.scanForScore()
+        print(ss.score_data)
