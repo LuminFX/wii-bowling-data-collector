@@ -2,7 +2,9 @@ import pytesseract
 import cv2 as cv
 import numpy as np
 
-img = cv.imread("../mmrscreen.png")
+cap = cv.VideoCapture(0)
+
+ret, img = cap.read()
 
 refined_frame = img
 
@@ -18,12 +20,18 @@ refined_frame = cv.cvtColor(refined_frame, cv.COLOR_BGR2GRAY)
 # threshold image
 refined_frame = cv.threshold(refined_frame, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)[1]
 
-x = 420
-y = 190
-w = 100
-h = 40
+x = 1120
+y = 420
+w = 240
+h = 80
 
 refined_frame = refined_frame[y:y+h, x:x+w]
+
+width = int(cap.get(cv.CAP_PROP_FRAME_WIDTH))
+height = int(cap.get(cv.CAP_PROP_FRAME_HEIGHT))
+
+# Print the resolution
+print("Resolution: {}x{}".format(width, height))
 
 cv.imshow("refined", refined_frame)
 

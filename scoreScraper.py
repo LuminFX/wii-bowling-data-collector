@@ -29,7 +29,7 @@ class scoreScraper:
     def scanForScore(self): # will take a frame from capture device and try to scrub for score
 
         ret, frame = self.capture_device.read()
-        ret = self.setScoreBounds(frame, 0, 300)
+        ret = self.setScoreBounds(frame)
 
         if not ret: return False
 
@@ -50,30 +50,72 @@ class scoreScraper:
                 h = self.score_bounds[i][3]
 
                 cropped_frame = frame[y:y+h, x:x+w]
-                refined_frame = self.threshold(cropped_frame)
+                refined_frame = self.imgproc(cropped_frame)
 
                 curr_read = pytesseract.image_to_string(refined_frame, config='--psm 11 --oem 3 outputbase digits')
-                ret, processed_score = self.processString(curr_read)
+                ret, processed_score = self.processString(curr_read, 0 ,300)
 
                 if ret:
                     score_list.append(processed_score)
 
+            print(score_list)
+
             if not len(score_list) == 0:
                 self.score_data[i].append([self.pickFrequentNumber(score_list)])
+                print("added " + str(self.pickFrequentNumber(score_list)))
+            else:
+                return False
+        return True
+    
+    def scanForMMRChange(self): # will take a frame from capture device and try to find the mmr change
+        
+        print("Scanning for mmr")
+
+        ret, frame = self.capture_device.read()
+
+        x = 1120
+        y = 420
+        w = 240
+        h = 80
+    
+        for i in range(self.num_players):
+
+            mmr_list = []
+            count = 0
+            
+            while count < 20:
+
+                ret, frame = self.capture_device.read()
+
+                cropped_frame = frame[y:y+h, x:x+w]
+                refined_frame = self.imgproc(cropped_frame)
+
+                curr_read = pytesseract.image_to_string(refined_frame, config='--psm 11 --oem 3 outputbase digits')
+                ret, processed_score = self.processString(curr_read, 0, 2000)
+
+                if ret:
+                    count += 1
+                    mmr_list.append(processed_score)
+
+            if not len(mmr_list) == 0:
+
+                if self.games_stored == 0:
+                    self.score_data[i][self.games_stored].append(self.starting_MMRs[i])
+                    self.score_data[i][self.games_stored].append(self.pickFrequentNumber(mmr_list) - self.starting_MMRs[i]) 
+                else:
+                    self.score_data[i][self.games_stored].append(self.score_data[i][self.games_stored-1][1])
+                    self.score_data[i][self.games_stored].append(self.pickFrequentNumber(mmr_list) - self.score_data[i][self.games_stored][1]) 
             else:
                 return False
         
         self.games_stored += 1
         return True
     
-    def scanForMMRChange(self): # will take a frame from capture device and try to find the mmr change
-        return
-    
     def toggleDebug(self): # enable and disable debug mode
         self.debug_mode = not self.debug_mode
 
     def setCaptureDevice(self, device_number): # Sets the capture device number for reference elsewhere
-        cap = cv.VideoCapture(0)
+        cap = cv.VideoCapture(device_number)
         if (cap.isOpened()):
             self.capture_device = cap
             return True
@@ -120,9 +162,6 @@ class scoreScraper:
                 c = max(contours, key = cv.contourArea)
                 x,y,w,h = cv.boundingRect(c) # create x, y, width, and height bounds
 
-                print(abs(w-h))
-                print(w)
-
                 if (abs(w-h) <= 70 and abs(w-h) >= 20) and w > 310:
                     self.score_bounds.append([x,y,w,h])
                     self.found_score_bounds = True
@@ -133,7 +172,7 @@ class scoreScraper:
     def pickFrequentNumber(self, list):
         return max(set(list), key=list.count)
     
-    def threshold(self, frame):
+    def imgproc(self, frame):
         
         refined_frame = frame.copy()
 
@@ -146,4 +185,4 @@ class scoreScraper:
         # threshold image
         refined_frame = cv.threshold(refined_frame, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)[1]
 
-        return frame
+        return refined_frame
