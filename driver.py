@@ -57,10 +57,8 @@ while True:
         ret = ss.scanForScore()
         if ret:
             print("Score captured!")
-            print(ss.score_data)
             for i in range(ss.num_players):
                 print("Player " + str(i+1) + ": " + str(ss.score_data[i][ss.games_stored][0]))
-            print(ss.score_data)
             user_input = input("Is this correct? (y/n)")
             if user_input == 'y':
                 break
@@ -74,7 +72,6 @@ while True:
             print("MMR Captured!")
             for i in range(ss.num_players):
                 print("Player " + str(i+1) + ": " + str(ss.score_data[i][ss.games_stored-1][2]))
-            print(ss.score_data)
             user_input = input("Is this correct? (y/n)")
             if user_input == 'y':
                 break
