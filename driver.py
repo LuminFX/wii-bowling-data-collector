@@ -38,7 +38,7 @@ for i in range(int(user_input)): # set starting player MMRs
                 if not success:
                     print("There was an error finding or loading this file. Please try again.")
             if success: 
-                print("Score of " + str(ss.score_data[i][-1][1] + ss.score_data[i][-1][2]) + " loaded successfully!")
+                print("MMR of " + str(ss.score_data[i][-1][1] + ss.score_data[i][-1][2]) + " loaded successfully!")
                 break;
         else:
             while True:
@@ -81,6 +81,8 @@ while True:
             else:
                 for i in range(ss.num_players):
                     del ss.score_data[i][ss.games_stored]
+
+    print(ss.score_data)
 
     while True:
         ret = ss.scanForMMRChange()

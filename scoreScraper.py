@@ -37,15 +37,20 @@ class scoreScraper:
             for row in data:
                 converted_row = ast.literal_eval(row[0])
                 converted_data.append(converted_row)
+                self.games_stored+=1
 
             self.score_data[player_index] = converted_data
             self.starting_MMRs.append(converted_data[-1][1] + converted_data[-1][2])
-            print(self.starting_MMRs[0])
+
             return True
 
         return False
     
     def writeScoreData(self, file_name, player_index): # will write data to file upon close
+
+        if os.path.exists(file_name+".csv"):
+            os.remove(file_name+".csv") 
+
         with open(file_name+".csv", "w", newline="") as file:
             writer = csv.writer(file)
             writer.writerows([[item] for item in self.score_data[player_index]])
@@ -83,11 +88,8 @@ class scoreScraper:
                 if ret:
                     score_list.append(processed_score)
 
-            print(score_list)
-
             if not len(score_list) == 0:
                 self.score_data[i].append([self.pickFrequentNumber(score_list)])
-                print("added " + str(self.pickFrequentNumber(score_list)))
             else:
                 return False
         return True
