@@ -1,6 +1,9 @@
 import cv2 as cv
 import numpy as np
 import pytesseract
+import csv
+import os.path
+import ast
 
 class scoreScraper:
     starting_MMRs = []
@@ -11,7 +14,7 @@ class scoreScraper:
     found_score_bounds = False
 
     capture_device = None
-    score_data = [[],[],[],[]] # will hold data in the form of [Starting MMR, Game Score, MMR Change]
+    score_data = [[],[],[],[]] # will hold data in the form of [Game Score, Starting MMR, MMR Change]
     debug_mode = False
 
     def __init__(self):
@@ -20,11 +23,33 @@ class scoreScraper:
     def __del__(self):
         self.capture_device.release()
 
-    def readScoreData(self, file_name): # will read existing score database from profided file
-        return
+    def readScoreData(self, file_name, player_index): # will read existing score database from profided file
+
+        if os.path.isfile(file_name):
+            with open(file_name, newline="") as file:
+                reader = csv.reader(file)
+                data = list(reader)
+
+            if len(data) == 0: return False
+
+            converted_data = []
+
+            for row in data:
+                converted_row = ast.literal_eval(row[0])
+                converted_data.append(converted_row)
+
+            self.score_data[player_index] = converted_data
+            self.starting_MMRs.append(converted_data[-1][1] + converted_data[-1][2])
+            print(self.starting_MMRs[0])
+            return True
+
+        return False
     
-    def writeScoreData(self, file_name): # will write data to file upon close
-        return
+    def writeScoreData(self, file_name, player_index): # will write data to file upon close
+        with open(file_name+".csv", "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerows([[item] for item in self.score_data[player_index]])
+
     
     def scanForScore(self): # will take a frame from capture device and try to scrub for score
 

@@ -19,19 +19,35 @@ ss = scoreScraper()
 user_input = None
 
 while True: # set number of players to track
-    user_input = input("Enter the number of players to track: ")
-    if dh.validIntInput(user_input, 1, 4):
+    user_input = input("Enter the number of players to track (currently support 1 player max): ")
+    if dh.validIntInput(user_input, 1, 1): #ensures only one player is allowed to play
         ss.num_players = int(user_input)
         break
     print("Invalid player count! Try again.")
 
 for i in range(int(user_input)): # set starting player MMRs
     while True:
-        user_input = input("Please input MMR for player " + str(i+1) + ": ")
-        if dh.validIntInput(user_input, 0, 2000):
-            ss.starting_MMRs.append(int(user_input))
-            break
-        print("Invalid MMR! Try again.")
+        user_input = input("Would you like to load a save file for player " + str(i+1) + "? (y/n): ")
+        if user_input == 'y':
+            success = False
+            while not success:
+                user_input = input("Please input save file name (or q to go back): ")
+                if user_input == 'q':
+                    break;
+                success = ss.readScoreData(user_input, i)
+                if not success:
+                    print("There was an error finding or loading this file. Please try again.")
+            if success: 
+                print("Score of " + str(ss.score_data[i][-1][1] + ss.score_data[i][-1][2]) + " loaded successfully!")
+                break;
+        else:
+            while True:
+                user_input = input("Please input MMR for player " + str(i+1) + ": ")
+                if dh.validIntInput(user_input, 0, 2000):
+                    ss.starting_MMRs.append(int(user_input))
+                    break
+                print("Invalid MMR! Try again.")
+            break;
 
 while True: # set capture device
     user_input = input("Enter the capture card device number (likely 1 if you have a webcam and 0 if you don't): ")
@@ -69,7 +85,7 @@ while True:
     while True:
         ret = ss.scanForMMRChange()
         if ret:
-            print("MMR Captured!")
+            print("MMR Change Captured!")
             for i in range(ss.num_players):
                 print("Player " + str(i+1) + ": " + str(ss.score_data[i][ss.games_stored-1][2]))
             user_input = input("Is this correct? (y/n)")
@@ -86,6 +102,9 @@ while True:
     if user_input == 'n':
         break
 
-        
+print("Saving data...")
 
-
+for i in range(int(ss.num_players)):
+    user_input = input("Please enter the name for player " + str(i+1) + "'s save file: ")
+    ss.writeScoreData(user_input, i)
+    print("Data for " + user_input + " has been saved.")
