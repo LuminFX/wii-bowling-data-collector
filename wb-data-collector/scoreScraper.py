@@ -1,3 +1,11 @@
+'''
+Main tracking class from wii-bowling-data-collector
+
+A scoreScraper object manages player bowling scores, MMRs, the capture device,
+and contains all functions needed to extract data from a capture card feed of 
+Wii Sports Bowling.
+'''
+
 import cv2 as cv
 import numpy as np
 import pytesseract
@@ -15,13 +23,24 @@ class scoreScraper:
 
     capture_device = None
     score_data = [[],[],[],[]] # will hold data in the form of [Game Score, Starting MMR, MMR Change]
-    debug_mode = False
 
     def __init__(self):
         return
     
     def __del__(self):
         self.capture_device.release()
+
+    """
+    readScoreData
+
+    Reads score data from a .csv file, formats it into a list within a list, and sets
+    games_stored, score_data, and starting_MMRs to correct values
+
+    Takes in a file_name with .csv included in the name and a player index between 0 and 3 (inclusive)
+
+    Returns bool based on success
+
+    """
 
     def readScoreData(self, file_name, player_index): # will read existing score database from profided file
 
@@ -46,6 +65,14 @@ class scoreScraper:
 
         return False
     
+
+    """
+    writeScoreData
+
+    Writes a player's score data (mmr and gamescores) to a CSV file.
+
+    Takes in a file name with no ".csv" extension and a player index between 0 and 3 (inclusive)
+    """
     def writeScoreData(self, file_name, player_index): # will write data to file upon close
 
         if os.path.exists(file_name+".csv"):
@@ -55,7 +82,15 @@ class scoreScraper:
             writer = csv.writer(file)
             writer.writerows([[item] for item in self.score_data[player_index]])
 
+    """
+    scanForScore
+
+    scanForScore captures a frame from the selected capture device and scans for a bowling score.
     
+    Returns boolean value based on success
+
+    """
+
     def scanForScore(self): # will take a frame from capture device and try to scrub for score
 
         ret, frame = self.capture_device.read()
@@ -137,9 +172,6 @@ class scoreScraper:
         
         self.games_stored += 1
         return True
-    
-    def toggleDebug(self): # enable and disable debug mode
-        self.debug_mode = not self.debug_mode
 
     def setCaptureDevice(self, device_number): # Sets the capture device number for reference elsewhere
         cap = cv.VideoCapture(device_number)
