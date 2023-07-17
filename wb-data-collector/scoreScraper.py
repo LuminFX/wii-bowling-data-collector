@@ -129,6 +129,15 @@ class scoreScraper:
                 return False
         return True
     
+    """
+    scanForMMRChange
+
+    scanForMMRChange captures a frame from the selected capture device and scans for a mmr score and calculates the change.
+    
+    Returns boolean value based on success
+
+    """
+
     def scanForMMRChange(self): # will take a frame from capture device and try to find the mmr change
         
         print("Scanning for mmr")
@@ -173,6 +182,12 @@ class scoreScraper:
         self.games_stored += 1
         return True
 
+    """
+    setCaptureDevice
+
+    Takes in device number and sets cap device for later use
+    """
+
     def setCaptureDevice(self, device_number): # Sets the capture device number for reference elsewhere
         cap = cv.VideoCapture(device_number)
         if (cap.isOpened()):
@@ -180,12 +195,14 @@ class scoreScraper:
             return True
         return False
     
-    def printCaptureFrame(self):
-        ret, frame = self.capture_device.read()
-        cv.imshow("Preview, press any key to continue", frame)
-        cv.waitKey(0)
-        cv.destroyAllWindows()
-    
+    """
+    processString
+
+    cleans an input string and returns a number between bounds with no other characters
+
+    takes in an input, low bound, and high bound
+    """
+
     def processString(self, input, low, high): # take input and return if the clean data is represented as a bowling score
         numbers_only = ''.join(c for c in input if c.isdigit())
         if numbers_only:
@@ -194,6 +211,12 @@ class scoreScraper:
                 return True, numbers_int
         return False, -1
     
+    """
+    getScoreBound
+
+    finds crop area for score reading from an input frame using openCV
+    """
+
     def setScoreBounds(self, frame):
         retVal = False
         for i in range(self.num_players):
@@ -228,9 +251,21 @@ class scoreScraper:
 
         return retVal
     
+    """
+    pickFrequentNumber
+
+    returns most frequent number in list
+    """
+
     def pickFrequentNumber(self, list):
         return max(set(list), key=list.count)
     
+    """
+    improc
+
+    processes passed in frame to prepare it for pytesseract text recognition
+    """
+
     def imgproc(self, frame, inverted):
         
         refined_frame = frame.copy()
