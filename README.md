@@ -4,6 +4,8 @@ The Wii Bowling Data Collector (WBDC) is built to record game information from W
 
 WBDC was built for the data-collection step of a longer-term project to reverse engineer the Wii Bowling MMR system.
 
+**WBDC currently only supports single player data collection.**
+
 ## Description
 
 WBDC records starting MMR, game score, and resultant MMR change from games of Wii Sports Bowling. To do this, a capture card video feed is taken from the Wii and processed with openCV and pytesseract. This information is tracked accross multiple games and is saved to a .csv file upon termination.
@@ -32,5 +34,6 @@ WBDC records starting MMR, game score, and resultant MMR change from games of Wi
 
 ### Known Issues
 
+* MMR reading is based purely on screen position, so with slight variation in capture device may cause issues. 
 * Pytesseract struggles to read some of the text on screen due to the low resolution output of the Wii. Due to this, it 'sticks' for a while in the MMR reading loop. Given time, the program continues, however this time is quite inconsistent.
 * WBDC Will occasionally have difficulty reading the bowling score when a new Wii record is set.
